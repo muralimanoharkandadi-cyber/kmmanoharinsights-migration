@@ -1,139 +1,102 @@
-import os
+from pathlib import Path
 import json
-import re
-import xml.etree.ElementTree as ET
+print("***** GENERATE_SITE.PY VERSION 2 *****")
 
-ATOM = {
-    "atom": "http://www.w3.org/2005/Atom"
-}
+from lib.parser import load_articles
+from lib.renderer import render_article
+from lib.homepage import render_homepage
+from lib.assets import copy_assets
+from lib.categories import render_categories
+from lib.sitemap import generate_sitemap
+from lib.robots import generate_robots
+from lib.rss import generate_rss
+from lib.error404 import generate_404
 
-
-def make_slug(title):
-    """Convert title into an SEO-friendly slug."""
-    slug = title.lower()
-    slug = re.sub(r'&', ' and ', slug)
-    slug = re.sub(r'[^a-z0-9]+', '-', slug)
-    slug = re.sub(r'-+', '-', slug)
-    return slug.strip("-")
+OUTPUT_DIR = Path("output")
 
 
-print("=" * 60)
-print("KM STATIC SITE BUILDER")
-print("=" * 60)
+def build_search_index(articles):
+    """
+    Generates output/search-index.json
+    """
 
-tree = ET.parse("feed.atom")
-root = tree.getroot()
+    search = []
 
-posts = []
+    for article in articles:
 
-for entry in root.findall("atom:entry", ATOM):
-
-    title = entry.findtext("atom:title", default="", namespaces=ATOM)
-
-    published = entry.findtext(
-        "atom:published",
-        default="",
-        namespaces=ATOM
-    )
-
-    updated = entry.findtext(
-        "atom:updated",
-        default="",
-        namespaces=ATOM
-    )
-
-    content = entry.findtext(
-        "atom:content",
-        default="",
-        namespaces=ATOM
-    )
-
-    summary = entry.findtext(
-        "atom:summary",
-        default="",
-        namespaces=ATOM
-    )
-
-    author = ""
-
-    author_node = entry.find("atom:author", ATOM)
-
-    if author_node is not None:
-        author = author_node.findtext(
-            "atom:name",
-            default="",
-            namespaces=ATOM
+        search.append(
+            {
+                "title": article["title"],
+                "slug": article["slug"],
+                "summary": article.get("summary", ""),
+                "labels": article.get("labels", []),
+                "published": article.get("published", ""),
+            }
         )
 
-    labels = []
+    output = OUTPUT_DIR / "search-index.json"
 
-    for cat in entry.findall("atom:category", ATOM):
-
-        term = cat.attrib.get("term")
-
-        if term:
-            labels.append(term)
-
-    blogger_url = ""
-
-    for link in entry.findall("atom:link", ATOM):
-
-        if link.attrib.get("rel") == "alternate":
-            blogger_url = link.attrib.get("href", "")
-            break
-
-    image = ""
-
-    m = re.search(
-        r'<img[^>]+src="([^"]+)"',
-        content,
-        re.IGNORECASE
+    output.write_text(
+        json.dumps(search, ensure_ascii=False, indent=2),
+        encoding="utf-8",
     )
 
-    if m:
-        image = m.group(1)
+    print("Search index generated.")
 
-    posts.append({
-        "title": title,
-        "slug": make_slug(title),
-        "published": published,
-        "updated": updated,
-        "author": author,
-        "labels": labels,
-        "url": blogger_url,
-        "summary": summary,
-        "image": image,
-        "content": content
-    })
 
-posts.sort(
-    key=lambda x: x["published"],
-    reverse=True
-)
+def main():
 
-os.makedirs("data", exist_ok=True)
+    print("KM Manohar Insights Generator")
 
-with open(
-    "data/posts.json",
-    "w",
-    encoding="utf-8"
-) as f:
+    copy_assets()
 
-    json.dump(
-        posts,
-        f,
-        ensure_ascii=False,
-        indent=2
-    )
+    articles = load_articles()
 
-print()
-print(f"Articles Found : {len(posts)}")
-print()
-print("posts.json created successfully.")
-print("Location: data/posts.json")
-print()
-print("Latest Articles:")
-print()
+    print(f"Generating {len(articles)} articles...\n")
 
-for article in posts[:5]:
-    print("•", article["title"])
+    for index, article in enumerate(articles):
+
+        previous_article = (
+            articles[index - 1]
+            if index > 0
+            else None
+        )
+
+        next_article = (
+            articles[index + 1]
+            if index < len(articles) - 1
+            else None
+        )
+
+        render_article(
+            article,
+            previous_article,
+            next_article,
+            articles,
+        )
+
+        print(f"{index + 1:03d}  {article['slug']}")
+
+    homepage = render_homepage(articles)
+    
+    render_categories(articles)
+    
+    print("Calling generate_sitemap...")
+    
+    generate_sitemap(articles)
+    
+    generate_robots()
+    
+    generate_rss(articles)
+    
+    generate_404()
+
+    build_search_index(articles)
+
+    print("\nFinished.")
+    print(f"Generated {len(articles)} articles.")
+    print(f"Homepage: {homepage}")
+
+
+if __name__ == "__main__":
+    main()
