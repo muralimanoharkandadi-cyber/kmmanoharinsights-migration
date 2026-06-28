@@ -9,7 +9,6 @@ def load_base_template():
 
 
 def build_related(article, all_articles):
-
     labels = set(article.get("labels", []))
 
     if not labels:
@@ -18,7 +17,6 @@ def build_related(article, all_articles):
     related = []
 
     for other in all_articles:
-
         if other["slug"] == article["slug"]:
             continue
 
@@ -34,25 +32,19 @@ def build_related(article, all_articles):
 
     html = """
 <section class="related-articles">
-
 <h2>Related Articles</h2>
-
 <ul>
 """
 
     for _, item in related[:5]:
-
-        html += f"""
+        html += f'''
 <li>
-<a href="/{item['slug']}/">
-{item['title']}
-</a>
+<a href="/{item["slug"]}/">{item["title"]}</a>
 </li>
-"""
+'''
 
     html += """
 </ul>
-
 </section>
 """
 
@@ -66,20 +58,14 @@ def render_html(article, previous_article, next_article, all_articles):
     navigation = '<div class="article-nav">'
 
     if previous_article:
-        navigation += (
-            f'<a class="nav-button" href="/{previous_article["slug"]}/">'
-            "⬅ Previous</a>"
-        )
+        navigation += f'<a class="nav-button" href="/{previous_article["slug"]}/">⬅ Previous</a>'
     else:
         navigation += "<span></span>"
 
     navigation += '<a class="nav-button" href="/">🏠 Home</a>'
 
     if next_article:
-        navigation += (
-            f'<a class="nav-button" href="/{next_article["slug"]}/">'
-            "Next ➡</a>"
-        )
+        navigation += f'<a class="nav-button" href="/{next_article["slug"]}/">Next ➡</a>'
     else:
         navigation += "<span></span>"
 
@@ -87,7 +73,16 @@ def render_html(article, previous_article, next_article, all_articles):
 
     related = build_related(article, all_articles)
 
-    content = article["content"] + navigation + related
+    hero = ""
+
+    if article.get("image"):
+        hero = f'''
+<div class="hero-image">
+    <img src="{article["image"]}" alt="{article["title"]}">
+</div>
+'''
+
+    content = hero + article["content"] + navigation + related
 
     html = html.replace("{{TITLE}}", article["title"])
     html = html.replace(
