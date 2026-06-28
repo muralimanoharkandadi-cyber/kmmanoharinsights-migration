@@ -116,6 +116,7 @@ def build_article(entry):
         "created": get_created(entry),
         "author": get_author(entry),
         "labels": get_labels(entry),
+        "image": get_hero_image(entry),
         "hero_image": get_hero_image(entry),
         "hero_alt": "",
         "reading_time": get_reading_time(entry),

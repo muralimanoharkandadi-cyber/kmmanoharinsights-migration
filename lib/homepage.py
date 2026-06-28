@@ -12,8 +12,18 @@ def render_homepage(articles):
 
     for article in articles:
 
+        image = article.get("image", "")
+
+        summary = article.get("summary", "Read the complete article.")
+
+        published = article.get("published", "")[:10]
+
         cards.append(f"""
 <article class="post-card">
+
+    <a href="{article['slug']}/">
+        <img src="{image}" alt="{article['title']}" class="post-image">
+    </a>
 
     <h2>
         <a href="{article['slug']}/">
@@ -21,9 +31,17 @@ def render_homepage(articles):
         </a>
     </h2>
 
+    <div class="post-meta">
+        📅 {published}
+    </div>
+
     <p class="post-summary">
-        Read the complete article →
+        {summary}
     </p>
+
+    <a class="read-more" href="{article['slug']}/">
+        Read More →
+    </a>
 
 </article>
 """)

@@ -4,7 +4,6 @@ from collections import defaultdict
 
 OUTPUT_DIR = Path("output")
 
-# Ignore labels that should not become public category pages
 IGNORE_LABELS = {
     "Focus Keywords",
     "Meta Description",
@@ -16,8 +15,7 @@ IGNORE_LABELS = {
 def slugify(text):
     text = text.lower().strip()
     text = re.sub(r"[^a-z0-9]+", "-", text)
-    text = text.strip("-")
-    return text[:60]   # Limit folder names to 60 characters
+    return text.strip("-")[:60]
 
 
 def normalize(label):
@@ -29,7 +27,6 @@ def render_categories(articles):
     categories = defaultdict(list)
 
     for article in articles:
-
         for label in article.get("labels", []):
 
             label = normalize(label)
@@ -46,21 +43,21 @@ def render_categories(articles):
 
     for label, posts in sorted(categories.items()):
 
-        # Skip very small categories
         if len(posts) < 2:
             continue
 
         folder = base / slugify(label)
         folder.mkdir(parents=True, exist_ok=True)
 
-        html = f"""
-<!DOCTYPE html>
-<html>
+        html = f"""<!DOCTYPE html>
+<html lang="en">
 <head>
 
 <meta charset="utf-8">
 
 <title>{label} | KM Manohar Insights</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <link rel="stylesheet" href="/assets/css/style.css">
 
@@ -69,15 +66,15 @@ def render_categories(articles):
 <body>
 
 <header>
-
 <div class="container">
 
-<h1>
-<a href="/">KM Manohar Insights</a>
-</h1>
+<h1><a href="/">KM Manohar Insights</a></h1>
+
+<p class="tagline">
+Science • Technology • AI • Space • Quantum • Biotechnology
+</p>
 
 </div>
-
 </header>
 
 <main class="container">
@@ -85,31 +82,58 @@ def render_categories(articles):
 <h2>{label}</h2>
 
 <p>{len(posts)} Articles</p>
+
+<div class="articles">
 """
 
         for article in posts:
 
+            image = article.get("image", "")
+            summary = article.get("summary", "")
+            published = article.get("published", "")[:10]
+
             html += f"""
 <article class="post-card">
 
-<h3>
-
 <a href="/{article['slug']}/">
-
-{article['title']}
-
+<img src="{image}" class="post-image" alt="{article['title']}">
 </a>
 
+<h3>
+<a href="/{article['slug']}/">
+{article['title']}
+</a>
 </h3>
 
-<p>{article.get('summary','')}</p>
+<div class="post-meta">
+📅 {published}
+</div>
+
+<p class="post-summary">
+{summary}
+</p>
+
+<a class="read-more" href="/{article['slug']}/">
+Read More →
+</a>
 
 </article>
 """
 
         html += """
+</div>
 
 </main>
+
+<footer>
+
+<div class="container">
+
+© 2026 KM Manohar Insights
+
+</div>
+
+</footer>
 
 </body>
 
@@ -124,5 +148,5 @@ def render_categories(articles):
         generated += 1
 
     print("=" * 60)
-    print(f"Generated {generated} quality category pages.")
+    print(f"Generated {generated} category pages.")
     print("=" * 60)

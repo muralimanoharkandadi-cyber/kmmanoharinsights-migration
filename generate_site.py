@@ -25,14 +25,16 @@ def build_search_index(articles):
     for article in articles:
 
         search.append(
-            {
-                "title": article["title"],
-                "slug": article["slug"],
-                "summary": article.get("summary", ""),
-                "labels": article.get("labels", []),
-                "published": article.get("published", ""),
-            }
-        )
+    {
+        "title": article["title"],
+        "slug": article["slug"],
+        "summary": article.get("summary", ""),
+        "labels": article.get("labels", []),
+        "published": article.get("published", ""),
+        "image": article.get("image", ""),
+        "author": article.get("author", ""),
+    }
+)
 
     output = OUTPUT_DIR / "search-index.json"
 
