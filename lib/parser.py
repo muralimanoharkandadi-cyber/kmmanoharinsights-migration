@@ -12,11 +12,39 @@ def load_feed():
         raise FileNotFoundError("feed.atom not found")
     return feed.read_text(encoding="utf-8")
 
-def load_entries():
-    root = ET.fromstring(load_feed())
-    entries = root.findall("atom:entry", ATOM)
-    print(f"Articles found: {len(entries)}")
-    return entries
+def load_articles():
+
+    articles = []
+
+    for entry in load_entries():
+
+        t = entry.find("blogger:type", BLOGGER)
+
+        if t is None or t.text != "POST":
+            continue
+
+        article = build_article(entry)
+
+        # Skip Blogger pages
+        if article["slug"].startswith("p-"):
+            continue
+
+        # Skip test posts
+        if article["slug"] in {
+            "next-test",
+            "bento-grid-test",
+            "blog-post",
+        }:
+            continue
+
+        articles.append(article)
+
+    articles.sort(
+        key=lambda a: a["published"],
+        reverse=True
+    )
+
+    return articles
 
 def strip_html(html):
     if not html:
@@ -124,7 +152,6 @@ def build_article(entry):
         "canonical_url": "",
     }
 
-def load_articles():
-    articles=[build_article(e) for e in load_entries()]
-    articles.sort(key=lambda a:a["published"], reverse=True)
-    return articles
+def load_entries():
+    root = ET.fromstring(load_feed())
+    return root.findall("atom:entry", ATOM)
