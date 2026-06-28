@@ -21,7 +21,6 @@ def build_related(article, all_articles):
             continue
 
         score = len(labels.intersection(other.get("labels", [])))
-
         if score:
             related.append((score, other))
 
@@ -37,11 +36,11 @@ def build_related(article, all_articles):
 """
 
     for _, item in related[:5]:
-        html += f'''
+        html += f"""
 <li>
-<a href="/{item["slug"]}/">{item["title"]}</a>
+<a href="/{item['slug']}/">{item['title']}</a>
 </li>
-'''
+"""
 
     html += """
 </ul>
@@ -74,21 +73,19 @@ def render_html(article, previous_article, next_article, all_articles):
     related = build_related(article, all_articles)
 
     hero = ""
-
     if article.get("image"):
-        hero = f'''
+        hero = f"""
 <div class="hero-image">
-    <img src="{article["image"]}" alt="{article["title"]}">
+    <img src="{article['image']}" alt="{article['title']}">
 </div>
-'''
+"""
 
     content = hero + article["content"] + navigation + related
 
     html = html.replace("{{TITLE}}", article["title"])
-    html = html.replace(
-        "{{DESCRIPTION}}",
-        article.get("summary", article["title"])
-    )
+    html = html.replace("{{AUTHOR}}", article.get("author", "KM Manohar"))
+    html = html.replace("{{PUBLISHED}}", article.get("published", "")[:10])
+    html = html.replace("{{DESCRIPTION}}", article.get("summary", article["title"]))
     html = html.replace(
         "{{CANONICAL}}",
         f"https://www.kmmanoharinsights.com/{article['slug']}/"
@@ -120,12 +117,7 @@ def save_article(article, previous_article, next_article, all_articles):
     return output_file
 
 
-def render_article(
-    article,
-    previous_article,
-    next_article,
-    all_articles,
-):
+def render_article(article, previous_article, next_article, all_articles):
     return save_article(
         article,
         previous_article,
