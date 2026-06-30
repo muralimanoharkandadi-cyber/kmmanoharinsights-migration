@@ -1,6 +1,6 @@
 from pathlib import Path
 
-BASE_TEMPLATE = Path("templates/base.html")
+BASE_TEMPLATE = Path("templates/article_v2.html")
 OUTPUT_DIR = Path("output")
 
 
@@ -57,14 +57,20 @@ def render_html(article, previous_article, next_article, all_articles):
     navigation = '<div class="article-nav">'
 
     if previous_article:
-        navigation += f'<a class="nav-button" href="/{previous_article["slug"]}/">⬅ Previous</a>'
+        navigation += (
+            f'<a class="nav-button" '
+            f'href="/{previous_article["slug"]}/">⬅ Previous</a>'
+        )
     else:
         navigation += "<span></span>"
 
     navigation += '<a class="nav-button" href="/">🏠 Home</a>'
 
     if next_article:
-        navigation += f'<a class="nav-button" href="/{next_article["slug"]}/">Next ➡</a>'
+        navigation += (
+            f'<a class="nav-button" '
+            f'href="/{next_article["slug"]}/">Next ➡</a>'
+        )
     else:
         navigation += "<span></span>"
 
@@ -73,6 +79,7 @@ def render_html(article, previous_article, next_article, all_articles):
     related = build_related(article, all_articles)
 
     hero = ""
+
     if article.get("image"):
         hero = f"""
 <div class="hero-image">
@@ -80,17 +87,24 @@ def render_html(article, previous_article, next_article, all_articles):
 </div>
 """
 
-    content = hero + article["content"] + navigation + related
+    published = article.get("published", "")[:10]
 
     html = html.replace("{{TITLE}}", article["title"])
     html = html.replace("{{AUTHOR}}", article.get("author", "KM Manohar"))
-    html = html.replace("{{PUBLISHED}}", article.get("published", "")[:10])
-    html = html.replace("{{DESCRIPTION}}", article.get("summary", article["title"]))
+    html = html.replace("{{PUBLISHED}}", published)
+    html = html.replace("{{DATE}}", published)
+    html = html.replace(
+        "{{DESCRIPTION}}",
+        article.get("summary", article["title"])
+    )
     html = html.replace(
         "{{CANONICAL}}",
         f"https://www.kmmanoharinsights.com/{article['slug']}/"
     )
-    html = html.replace("{{CONTENT}}", content)
+    html = html.replace("{{HERO}}", hero)
+    html = html.replace("{{CONTENT}}", article["content"])
+    html = html.replace("{{NAVIGATION}}", navigation)
+    html = html.replace("{{RELATED}}", related)
 
     return html
 

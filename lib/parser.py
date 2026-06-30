@@ -3,6 +3,8 @@ import xml.etree.ElementTree as ET
 from html import unescape
 import re
 
+from lib.content_cleaner import clean_content
+
 ATOM = {"atom": "http://www.w3.org/2005/Atom"}
 BLOGGER = {"blogger": "http://schemas.google.com/blogger/2018"}
 
