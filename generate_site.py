@@ -1,53 +1,109 @@
-import xml.etree.ElementTree as ET
-from urllib.parse import urlparse
+from pathlib import Path
+import json
 
-# Blogger Atom namespace
-NS = {
-    "atom": "http://www.w3.org/2005/Atom"
-}
+print("***** GENERATE_SITE.PY VERSION 2 *****")
 
-print("Reading feed.atom...")
+from lib.parser import load_articles
+from lib.renderer_v3 import render_article
+from lib.homepage import render_homepage
+from lib.assets import copy_assets
+from lib.categories import render_categories
+from lib.sitemap import generate_sitemap
+from lib.robots import generate_robots
+from lib.rss import generate_rss
+from lib.error404 import generate_404
+from lib.link_converter import convert_links
+from lib.article_metadata import enrich_article
 
-# Load the Atom feed
-tree = ET.parse("feed.atom")
-root = tree.getroot()
+OUTPUT_DIR = Path("output")
 
-# Find all entries
-entries = root.findall("atom:entry", NS)
 
-print(f"Found {len(entries)} entries.\n")
+def build_search_index(articles):
+    """
+    Generates output/search-index.json
+    """
+    search = []
 
-posts = []
+    for article in articles:
+        search.append(
+            {
+                "title": article["title"],
+                "slug": article["slug"],
+                "summary": article.get("summary", ""),
+                "labels": article.get("labels", []),
+                "published": article.get("published", ""),
+                "image": article.get("image", ""),
+                "author": article.get("author", ""),
+            }
+        )
 
-for entry in entries:
+    output = OUTPUT_DIR / "search-index.json"
 
-    title = entry.findtext("atom:title", default="", namespaces=NS)
-    published = entry.findtext("atom:published", default="", namespaces=NS)
-    updated = entry.findtext("atom:updated", default="", namespaces=NS)
-    content = entry.findtext("atom:content", default="", namespaces=NS)
+    output.write_text(
+        json.dumps(search, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
 
-    labels = []
-    for category in entry.findall("atom:category", NS):
-        term = category.get("term")
-        if term:
-            labels.append(term)
+    print("Search index generated.")
 
-    posts.append({
-        "title": title,
-        "published": published,
-        "updated": updated,
-        "labels": labels,
-        "content": content
-    })
 
-print(f"Extracted {len(posts)} posts.\n")
+def main():
 
-print("=" * 60)
+    print("KM Manohar Insights Generator")
 
-for post in posts[:5]:
-    print(f"Title       : {post['title']}")
-    print(f"Published   : {post['published']}")
-    print(f"Updated     : {post['updated']}")
-    print(f"Labels      : {', '.join(post['labels'])}")
-    print(f"Content Len : {len(post['content'])} characters")
-    print("-" * 60)
+    copy_assets()
+
+    articles = load_articles()
+
+    print(f"Generating {len(articles)} articles...\n")
+
+    for index, article in enumerate(articles):
+
+        previous_article = (
+            articles[index - 1]
+            if index > 0
+            else None
+        )
+
+        next_article = (
+            articles[index + 1]
+            if index < len(articles) - 1
+            else None
+        )
+
+        article = enrich_article(article)
+
+        article["content"] = convert_links(article["content"])
+
+        render_article(
+            article,
+            previous_article,
+            next_article,
+            articles,
+        )
+
+        print(f"{index + 1:03d}  {article['slug']}")
+
+    homepage = render_homepage(articles)
+
+    render_categories(articles)
+
+    print("Calling generate_sitemap...")
+
+    generate_sitemap(articles)
+
+    generate_robots()
+
+    generate_rss(articles)
+
+    generate_404()
+
+    build_search_index(articles)
+
+    print("\nFinished.")
+    print(f"Generated {len(articles)} articles.")
+    print(f"Homepage: {homepage}")
+
+
+if __name__ == "__main__":
+    main()
