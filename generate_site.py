@@ -20,8 +20,11 @@ OUTPUT_DIR = Path("output")
 
 def build_search_index(articles):
     """
-    Generates output/search-index.json
+    Generates:
+    - output/search-index.json
+    - output/data/posts.json
     """
+
     search = []
 
     for article in articles:
@@ -37,6 +40,7 @@ def build_search_index(articles):
             }
         )
 
+    # search-index.json
     output = OUTPUT_DIR / "search-index.json"
 
     output.write_text(
@@ -44,8 +48,26 @@ def build_search_index(articles):
         encoding="utf-8",
     )
 
-    print("Search index generated.")
+    # posts.json
+    data_dir = OUTPUT_DIR / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
 
+    posts_file = data_dir / "posts.json"
+
+    posts_file.write_text(
+        json.dumps(
+            {
+                "count": len(search),
+                "posts": search,
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    print("Search index generated.")
+    print("posts.json generated.")
 
 def main():
 
