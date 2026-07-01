@@ -3,53 +3,69 @@ from pathlib import Path
 OUTPUT_DIR = Path("output")
 INDEX_TEMPLATE = Path("templates/index.html")
 
+HOMEPAGE_LIMIT = 20
+
+
+def build_card(article):
+    image = article.get("image", "")
+    title = article.get("title", "Untitled")
+    summary = article.get("summary", "Read the complete article.")
+    published = article.get("published", "")[:10]
+    slug = article["slug"]
+
+    return f"""
+<article class="post-card">
+
+    <a href="{slug}/">
+        <img src="{image}" alt="{title}" class="post-image">
+    </a>
+
+    <div class="post-content">
+
+        <div class="post-meta">
+            {published}
+        </div>
+
+        <h2>
+            <a href="{slug}/">
+                {title}
+            </a>
+        </h2>
+
+        <p class="post-summary">
+            {summary}
+        </p>
+
+        <a class="read-more" href="{slug}/">
+            Read More →
+        </a>
+
+    </div>
+
+</article>
+"""
+
 
 def render_homepage(articles):
 
     template = INDEX_TEMPLATE.read_text(encoding="utf-8")
 
-    cards = []
+    latest = sorted(
+        articles,
+        key=lambda x: x.get("published", ""),
+        reverse=True
+    )[:HOMEPAGE_LIMIT]
 
-    for article in articles:
+    cards = "\n".join(build_card(article) for article in latest)
 
-        image = article.get("image", "")
+    print("PLACEHOLDER FOUND:", "{{ARTICLES}}" in template)
+    print("CARDS:", len(cards))
 
-        summary = article.get("summary", "Read the complete article.")
+    html = template.replace("{{ARTICLES}}", cards)
 
-        published = article.get("published", "")[:10]
+    print("PLACEHOLDER AFTER REPLACE:", "{{ARTICLES}}" in html)
 
-        cards.append(f"""
-<article class="post-card">
-
-    <a href="{article['slug']}/">
-        <img src="{image}" alt="{article['title']}" class="post-image">
-    </a>
-
-    <h2>
-        <a href="{article['slug']}/">
-            {article['title']}
-        </a>
-    </h2>
-
-    <div class="post-meta">
-        📅 {published}
-    </div>
-
-    <p class="post-summary">
-        {summary}
-    </p>
-
-    <a class="read-more" href="{article['slug']}/">
-        Read More →
-    </a>
-
-</article>
-""")
-
-    html = template.replace(
-        "{{ARTICLES}}",
-        "\n".join(cards)
-    )
+    OUTPUT_DIR.mkdir(exist_ok=True)
 
     output_file = OUTPUT_DIR / "index.html"
 
@@ -57,5 +73,7 @@ def render_homepage(articles):
         html,
         encoding="utf-8"
     )
+
+    print(f"Homepage generated: {output_file}")
 
     return output_file
