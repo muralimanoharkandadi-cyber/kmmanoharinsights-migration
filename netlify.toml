@@ -2,7 +2,8 @@
 command = "pip install -r requirements.txt && python generate_site.py"
 publish = "output"
 
-[[redirects]]
-from = "/*"
-to = "/index.html"
-status = 200
+# Remove this:
+# [[redirects]]
+# from = "/*"
+# to = "/index.html"
+# status = 200
